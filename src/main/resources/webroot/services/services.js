@@ -14,6 +14,12 @@ angular.module('servestrApp.services', [
     'knalli.angular-vertxbus',
     'toaster'
 ])
+    .config(function(vertxEventBusProvider) {
+        vertxEventBusProvider
+        .enable()
+        .useReconnect()
+        .useUrlServer("" + location.protocol + "//" + location.hostname + (location.port ? ':' + location.port : ''));
+    })
     .constant("servestrConfig", {
     "timeout": 60000
     })
