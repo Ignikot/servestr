@@ -1,0 +1,12 @@
+{
+  "auth": {
+    "properties_path": "classpath:vertx-users.properties"
+  },
+  "mongopersistor": {
+    "address": "servestr.mongopersistor",
+    "connection_string": "mongodb://ink:ink@ds039431.mongolab.com:39431/servestr",
+    "username": "ink",
+    "password": "ink",
+    "db_name": "servestr"
+  }
+}

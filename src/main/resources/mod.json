@@ -1,0 +1,18 @@
+{
+
+  // Java verticle
+  "main":"com.uchenikimira.servestr.vertx.MainVerticle",
+  "includes": "",
+  "deploys": "",
+  "description":"Service repository",
+  "licenses": [""],
+  "author": "Igor Kotenko",
+
+  // Optional fields
+  "developers": ["Igor Kotenko"],
+  "keywords": ["repository", "service", "SOA"],
+  "homepage": "servestr.uchenikimira.com",
+
+  "auto-redeploy": true
+
+}
