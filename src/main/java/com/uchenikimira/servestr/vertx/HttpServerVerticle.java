@@ -23,8 +23,12 @@ public class HttpServerVerticle extends AbstractVerticle {
 
         String port = System.getenv("PORT");
         if (port == null || port.isEmpty()) {
-            port = "8080";
+            port = System.getProperty("http.port");
+            if (port == null || port.isEmpty()) {
+                port = "8080";
+            };
         };
+        String address = System.getenv("http.address");
 
         JsonObject config = config().getJsonObject("auth");
 
@@ -79,7 +83,12 @@ public class HttpServerVerticle extends AbstractVerticle {
                 .handler(StaticHandler.create())
                 //.handler(LoggerHandler.create())
                 .failureHandler(ErrorHandler.create());
-        vertx.createHttpServer().requestHandler(router::accept).listen(Integer.parseInt(port));
+        if (address == null || address.isEmpty()) {
+            vertx.createHttpServer().requestHandler(router::accept).listen(Integer.parseInt(port));
+        } else {
+            vertx.createHttpServer().requestHandler(router::accept).listen(Integer.parseInt(port), address);
+        }
+
 
         logger.info("HttpServerVerticle started");
     }
