@@ -18,7 +18,7 @@ angular.module('servestrApp.services', [
         vertxEventBusProvider
         .enable()
         .useReconnect()
-        .useUrlServer("" + location.protocol + "//" + location.hostname + (location.port ? ':' + location.port : ''));
+        .useUrlServer("" + location.protocol + "//" + location.hostname + ':8433');//TODO openshift hack
     })
     .constant("servestrConfig", {
     "timeout": 60000
