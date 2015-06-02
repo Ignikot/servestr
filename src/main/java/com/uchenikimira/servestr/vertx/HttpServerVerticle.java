@@ -21,14 +21,14 @@ public class HttpServerVerticle extends AbstractVerticle {
     private static final Logger logger = LoggerFactory.getLogger(HttpServerVerticle.class);
     public void start() {
 
-        String port = System.getenv("PORT");
+        String port = System.getProperty("http.port");
         if (port == null || port.isEmpty()) {
-            port = System.getProperty("http.port");
+            port = System.getenv("PORT");
             if (port == null || port.isEmpty()) {
                 port = "8080";
             };
         };
-        String address = System.getenv("http.address");
+        String address = System.getProperty("http.address");
 
         JsonObject config = config().getJsonObject("auth");
 
