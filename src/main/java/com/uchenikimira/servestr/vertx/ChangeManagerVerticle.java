@@ -11,7 +11,7 @@ import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import io.vertx.core.AbstractVerticle;
 import io.vertx.core.logging.Logger;
-import io.vertx.core.logging.impl.LoggerFactory;
+import io.vertx.core.logging.LoggerFactory;
 import io.vertx.ext.mongo.MongoClient;
 
 public class ChangeManagerVerticle extends AbstractVerticle {
@@ -39,7 +39,10 @@ public class ChangeManagerVerticle extends AbstractVerticle {
                         eb.publish(NEWS, newDocument);
                     } else {
                         res.cause().printStackTrace();
-                        clientMessage.fail(500, res.cause().getMessage());
+                        JsonObject error = new JsonObject();
+                        error.put("error", true);
+                        error.put("message", res.cause().getMessage());
+                        clientMessage.reply(error);
                     }
                 });
             } else if ("save".equalsIgnoreCase(action)) {
@@ -53,7 +56,10 @@ public class ChangeManagerVerticle extends AbstractVerticle {
                         eb.publish(NEWS, body);
                     } else {
                         res.cause().printStackTrace();
-                        clientMessage.fail(500, res.cause().getMessage());
+                        JsonObject error = new JsonObject();
+                        error.put("error", true);
+                        error.put("message", res.cause().getMessage());
+                        clientMessage.reply(error);
                     }
                 });
             } else if ("delete".equalsIgnoreCase(action)) {
@@ -64,7 +70,10 @@ public class ChangeManagerVerticle extends AbstractVerticle {
                         eb.publish(NEWS, body);
                     } else {
                         res.cause().printStackTrace();
-                        clientMessage.fail(500, res.cause().getMessage());
+                        JsonObject error = new JsonObject();
+                        error.put("error", true);
+                        error.put("message", res.cause().getMessage());
+                        clientMessage.reply(error);
                     }
                 });
             } else if ("find".equalsIgnoreCase(action)) {
@@ -74,7 +83,10 @@ public class ChangeManagerVerticle extends AbstractVerticle {
                         clientMessage.reply(new JsonArray(res.result()));
                     } else {
                         res.cause().printStackTrace();
-                        clientMessage.fail(500, res.cause().getMessage());
+                        JsonObject error = new JsonObject();
+                        error.put("error", true);
+                        error.put("message", res.cause().getMessage());
+                        clientMessage.reply(error);
                     }
                 });
             }

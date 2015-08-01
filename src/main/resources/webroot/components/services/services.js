@@ -18,14 +18,14 @@ angular.module('servestrApp.services', [
         vertxEventBusProvider
         .enable()
         .useReconnect()
-        .useUrlServer("" + location.protocol + "//" + location.hostname + ':8433');//TODO openshift hack
+        .useUrlServer("https://" + location.hostname);//TODO openshift hack
     })
     .constant("servestrConfig", {
     "timeout": 60000
     })
     .config(['$routeProvider', function ($routeProvider) {
         $routeProvider.when('/services', {
-            templateUrl: 'services/services-list.html',
+            templateUrl: 'components/services/services-list.html',
             controller: 'servicesListCtrl'
         });
     }])
@@ -246,7 +246,8 @@ angular.module('servestrApp.services', [
                 {name: 'tester_coverage', displayName: 'Тестовое покрытие', width: 100},
                 {name: 'bs_status', displayName: 'Статус бизнес сервиса', cellTooltip: true, width: 500},
                 {name: 'wsdl', displayName: 'WSDL url', cellTooltip: true, width: 500},
-                {name: 'service', displayName: 'Cервис', cellTooltip: true, width: 500}
+                {name: 'service', displayName: 'Cервис', cellTooltip: true, width: 500},
+                {name: 'pad', displayName: ' ', enableCellEdit: false, enableFiltering: false, enableSorting: false, enableColumnResizing:false, enableGridMenu: false, width: 100}
             ];
 
             $scope.dateColumns = [];
@@ -368,7 +369,15 @@ angular.module('servestrApp.services', [
             };
             console.log('Send update message: ', angular.toJson(message, true));
             vertxEventBusService.send('servestr.changemanager', angular.fromJson(angular.toJson(message, false)), servestrConfig.timeout)
-                .then(function () {
+                .then(function (reply) {
+                if(reply.error === true)
+                    toaster.pop(
+                    {
+                        type: 'error',
+                        title: 'Update error ',
+                        body: reply.message,
+                        showCloseButton: true
+                    });
                 })
                 .catch(function (reason) {
                     toaster.pop(

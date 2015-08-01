@@ -1,4 +1,4 @@
-/*! angular-vertxbus - v1.1.4 - 2015-05-01
+/*! angular-vertxbus - v0.11.2 - 2015-01-16
 * http://github.com/knalli/angular-vertxbus
 * Copyright (c) 2015 ; Licensed  */
 (function() {
@@ -9,7 +9,7 @@
 
   /*
     An AngularJS wrapper for projects using the VertX Event Bus
-
+  
     * enabled (default true): if false, the usage of the Event Bus will be disabled (actually, no vertx.EventBus will be created)
     * debugEnabled (default false): if true, some additional debug loggings will be displayed
     * prefix (default 'vertx-eventbus.'): a prefix used for the global broadcasts
@@ -31,7 +31,7 @@
       enabled: true,
       debugEnabled: false,
       prefix: 'vertx-eventbus.',
-      urlServer: "" + location.protocol + "//" + location.hostname + (location.port ? ':' + location.port : ''),
+      urlServer: "" + location.protocol + "//" + location.hostname + ":" + (location.port || 80),
       urlPath: '/eventbus',
       reconnectEnabled: true,
       sockjsStateInterval: 10000,
@@ -123,10 +123,10 @@
 
     /*
       A stub representing the VertX Event Bus (core functionality)
-
+    
       Because the Event Bus cannot handle a reconnect (because of the underlaying SockJS), a new instance of the bus have to be created.
       This stub ensures only one object holding the current active instance of the bus.
-
+    
       The stub supports theses VertX Event Bus APIs:
       - close()
       - login(username, password, replyHandler)
@@ -135,12 +135,12 @@
       - registerHandler(adress, handler)
       - unregisterHandler(address, handler)
       - readyState()
-
+    
       Furthermore, the stub supports theses extra APIs:
       - recconnect()
      */
     this.$get = ['$timeout', '$log', function($timeout, $log) {
-      var EventBusOriginal, EventBusStub, connect, debugEnabled, disconnectTimeoutEnabled, enabled, eventBus, prefix, reconnectEnabled, sockjsOptions, sockjsReconnectInterval, sockjsStateInterval, url, urlPath, urlServer, _ref;
+      var EventBusOriginal, EventBusStub, connect, debugEnabled, enabled, eventBus, prefix, reconnectEnabled, sockjsOptions, sockjsReconnectInterval, sockjsStateInterval, url, urlPath, urlServer, _ref;
       _ref = angular.extend({}, DEFAULT_OPTIONS, options), enabled = _ref.enabled, debugEnabled = _ref.debugEnabled, prefix = _ref.prefix, urlServer = _ref.urlServer, urlPath = _ref.urlPath, reconnectEnabled = _ref.reconnectEnabled, sockjsStateInterval = _ref.sockjsStateInterval, sockjsReconnectInterval = _ref.sockjsReconnectInterval, sockjsOptions = _ref.sockjsOptions;
       EventBusStub = null;
       EventBusOriginal = typeof vertx !== "undefined" && vertx !== null ? vertx.EventBus : void 0;
@@ -150,7 +150,6 @@
           $log.debug("[Vert.x EB Stub] Enabled: connecting '" + url + "'");
         }
         eventBus = null;
-        disconnectTimeoutEnabled = true;
         connect = function() {
           eventBus = new EventBusOriginal(url, void 0, sockjsOptions);
           eventBus.onopen = function() {
@@ -162,39 +161,21 @@
             }
           };
           eventBus.onclose = function() {
+            if (debugEnabled) {
+              $log.debug("[Vert.x EB Stub] Reconnect in " + sockjsReconnectInterval + "ms");
+            }
             if (typeof EventBusStub.onclose === 'function') {
               EventBusStub.onclose();
             }
-            if (!disconnectTimeoutEnabled) {
-              if (debugEnabled) {
-                $log.debug("[Vert.x EB Stub] Reconnect immediately");
-              }
-              disconnectTimeoutEnabled = true;
-              connect();
-            } else {
-              if (reconnectEnabled) {
-                if (debugEnabled) {
-                  $log.debug("[Vert.x EB Stub] Reconnect in " + sockjsReconnectInterval + "ms");
-                }
-                $timeout(connect, sockjsReconnectInterval);
-              }
+            if (reconnectEnabled) {
+              $timeout(connect, sockjsReconnectInterval);
             }
           };
         };
         connect();
         EventBusStub = {
-          reconnect: function(immediately) {
-            if (immediately == null) {
-              immediately = false;
-            }
-            if (eventBus.readyState() === EventBusStub.EventBus.OPEN) {
-              if (immediately) {
-                disconnectTimeoutEnabled = false;
-              }
-              return eventBus.close();
-            } else {
-              return connect();
-            }
+          reconnect: function() {
+            return eventBus.close();
           },
           close: function() {
             return eventBus.close();
@@ -202,8 +183,8 @@
           login: function(username, password, replyHandler) {
             return eventBus.login(username, password, replyHandler);
           },
-          send: function(address, message, replyHandler, failHandler) {
-            return eventBus.send(address, message, replyHandler, failHandler);
+          send: function(address, message, replyHandler) {
+            return eventBus.send(address, message, replyHandler);
           },
           publish: function(address, message) {
             return eventBus.publish(address, message);
@@ -220,9 +201,7 @@
             return deconstructor;
           },
           unregisterHandler: function(address, handler) {
-            if (eventBus.readyState() === EventBusStub.EventBus.OPEN) {
-              return eventBus.unregisterHandler(address, handler);
-            }
+            return eventBus.unregisterHandler(address, handler);
           },
           readyState: function() {
             return eventBus.readyState();
@@ -256,13 +235,13 @@
 
   /*
     A service utilitzing an underlaying Vertx Event Bus
-
+  
     The advanced features of this service are:
     - broadcasting the connection changes (vertx-eventbus.system.connected, vertx-eventbus.system.disconnected) on $rootScope
     - registering all handlers again when a reconnect had been required
     - supporting a promise when using send()
     - adding aliases on (registerHandler), un (unregisterHandler) and emit (publish)
-
+  
     Basic usage:
     module.controller('MyController', function('vertxEventService'){
       vertxEventService.on('my.address', function(message) {
@@ -270,7 +249,7 @@
       });
       vertxEventService.publish('my.other.address', {type: 'foo', data: 'bar'});
     });
-
+  
     Note the additional configuration of the module itself.
    */
 
@@ -288,7 +267,7 @@
 
     /*
       Simple queue implementation
-
+    
       FIFO: #push() + #first()
       LIFO: #push() + #last()
      */
@@ -328,7 +307,7 @@
 
     /*
       Simple Map implementation
-
+    
       This implementation allows usage of non serializable keys for values.
      */
     SimpleMap = (function() {
@@ -440,25 +419,19 @@
       return this;
     };
     this.skipUnauthorizeds.displayName = "" + CONSTANTS.MODULE + "/" + CONSTANTS.COMPONENT + ": provider.skipUnauthorizeds";
-    this.$get = ['$rootScope', '$q', '$interval', 'vertxEventBus', '$log', function($rootScope, $q, $interval, vertxEventBus, $log) {
-      var callbackMap, connectionIntervalCheck, connectionState, debugEnabled, enabled, ensureOpenAuthConnection, ensureOpenConnection, loginPromise, messageBuffer, messageQueue, prefix, reconnectEnabled, sockjsOptions, sockjsReconnectInterval, sockjsStateInterval, states, urlPath, urlServer, util, validSession, wrapped, _ref, _ref1;
+    this.$get = ['$rootScope', '$q', '$interval', '$timeout', 'vertxEventBus', '$log', function($rootScope, $q, $interval, $timeout, vertxEventBus, $log) {
+      var callbackMap, connectionIntervalCheck, connectionState, debugEnabled, enabled, ensureOpenAuthConnection, ensureOpenConnection, loginPromise, messageBuffer, messageQueue, prefix, reconnectEnabled, sockjsOptions, sockjsReconnectInterval, sockjsStateInterval, urlPath, urlServer, util, validSession, wrapped, _ref, _ref1;
       _ref = (vertxEventBus != null ? vertxEventBus.getOptions() : void 0) || {}, enabled = _ref.enabled, debugEnabled = _ref.debugEnabled, prefix = _ref.prefix, urlServer = _ref.urlServer, urlPath = _ref.urlPath, reconnectEnabled = _ref.reconnectEnabled, sockjsStateInterval = _ref.sockjsStateInterval, sockjsReconnectInterval = _ref.sockjsReconnectInterval, sockjsOptions = _ref.sockjsOptions, messageBuffer = _ref.messageBuffer;
       connectionState = vertxEventBus != null ? (_ref1 = vertxEventBus.EventBus) != null ? _ref1.CLOSED : void 0 : void 0;
       validSession = false;
       loginPromise = null;
       messageQueue = new Queue(messageBuffer);
       callbackMap = new SimpleMap();
-      states = {
-        connected: false
-      };
       if (enabled && vertxEventBus) {
         vertxEventBus.onopen = function() {
           var address, callback, callbacks, fn, _i, _len, _ref2;
           wrapped.getConnectionState(true);
-          if (!states.connected) {
-            states.connected = true;
-            $rootScope.$broadcast("" + prefix + "system.connected");
-          }
+          $rootScope.$broadcast("" + prefix + "system.connected");
           _ref2 = wrapped.handlers;
           for (address in _ref2) {
             if (!__hasProp.call(_ref2, address)) continue;
@@ -483,10 +456,7 @@
         };
         vertxEventBus.onclose = function() {
           wrapped.getConnectionState(true);
-          if (states.connected) {
-            states.connected = false;
-            return $rootScope.$broadcast("" + prefix + "system.disconnected");
-          }
+          return $rootScope.$broadcast("" + prefix + "system.disconnected");
         };
         vertxEventBus.onclose.displayName = "" + CONSTANTS.MODULE + "/" + CONSTANTS.COMPONENT + ": 'onclose' handler";
       }
@@ -549,28 +519,22 @@
           vertxEventBus.unregisterHandler(address, callbackMap.get(callback));
           callbackMap.remove(callback);
         },
-        send: function(address, message, timeout, expectReply) {
+        send: function(address, message, timeout) {
           var deferred, dispatched, next;
           if (timeout == null) {
             timeout = 10000;
           }
-          if (expectReply == null) {
-            expectReply = true;
-          }
           deferred = $q.defer();
           next = function() {
-            if (expectReply) {
-              vertxEventBus.send(address, message, function(reply) {
+            vertxEventBus.send(address, message, function(reply) {
+              if (deferred) {
                 return deferred.resolve(reply);
-              }, function(fail) {
-                return deferred.reject(fail);
-              });
-              return $interval((function() {
+              }
+            });
+            if (deferred) {
+              return $timeout((function() {
                 return deferred.reject();
-              }), timeout, 1);
-            } else {
-              vertxEventBus.send(address, message);
-              return deferred.resolve();
+              }), timeout);
             }
           };
           next.displayName = "" + CONSTANTS.MODULE + "/" + CONSTANTS.COMPONENT + ": util.send (ensureOpenAuthConnection callback)";
@@ -610,9 +574,9 @@
           };
           next.displayName = "" + CONSTANTS.MODULE + "/" + CONSTANTS.COMPONENT + ": util.login (callback)";
           vertxEventBus.login(username, password, next);
-          $interval((function() {
+          $timeout((function() {
             return deferred.reject();
-          }), timeout, 1);
+          }), timeout);
           return deferred.promise;
         }
       };
@@ -631,10 +595,7 @@
           wrapped.handlers[address].push(callback);
           unregisterFn = null;
           if (connectionState === vertxEventBus.EventBus.OPEN) {
-            util.registerHandler(address, callback);
-            unregisterFn = function() {
-              return util.unregisterHandler(address, callback);
-            };
+            unregisterFn = util.registerHandler(address, callback);
           }
 
           /* and return the deregister callback */
@@ -642,16 +603,15 @@
             var index;
             if (unregisterFn) {
               unregisterFn();
-              unregisterFn = void 0;
             }
             if (wrapped.handlers[address]) {
               index = wrapped.handlers[address].indexOf(callback);
               if (index > -1) {
                 wrapped.handlers[address].splice(index, 1);
               }
-              if (wrapped.handlers[address].length < 1) {
-                wrapped.handlers[address] = void 0;
-              }
+            }
+            if (wrapped.handlers[address].length < 1) {
+              wrapped.handlers[address] = void 0;
             }
           };
           deconstructor.displayName = "" + CONSTANTS.MODULE + "/" + CONSTANTS.COMPONENT + ": wrapped.registerHandler (deconstructor)";
@@ -664,22 +624,19 @@
             if (index > -1) {
               wrapped.handlers[address].splice(index, 1);
             }
-            if (wrapped.handlers[address].length < 1) {
-              wrapped.handlers[address] = void 0;
-            }
+          }
+          if (wrapped.handlers[address].length < 1) {
+            wrapped.handlers[address] = void 0;
           }
           if (connectionState === vertxEventBus.EventBus.OPEN) {
             return util.unregisterHandler(address, callback);
           }
         },
-        send: function(address, message, timeout, expectReply) {
+        send: function(address, message, timeout) {
           if (timeout == null) {
             timeout = 10000;
           }
-          if (expectReply == null) {
-            expectReply = true;
-          }
-          return util.send(address, message, timeout, expectReply);
+          return util.send(address, message, timeout);
         },
         publish: function(address, message) {
           return util.publish(address, message);

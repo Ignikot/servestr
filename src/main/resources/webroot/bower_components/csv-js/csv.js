@@ -18,10 +18,10 @@
  The above copyright notice and this permission notice shall be included in
  all copies or substantial portions of the Software.
 
- Author Greg Kindel (twitter @gkindel), 2013
+ Author Greg Kindel (twitter @gkindel), 2014
  */
 
-(function () {
+(function (global) {
     'use strict';
     /**
      * @name CSV
@@ -192,50 +192,50 @@
         return result;
     };
 
-    CSV.json = function () {
-	var s = new require('stream').Transform({objectMode: true})
-	s._transform = function(chunk, encoding, done) {
-	    s.push(JSON.stringify(chunk.toString())+require('os').EOL)
-	    done()
-	}
-	return s
-    }
-
     /**
      * @name CSV.stream
      * @function
      * @description stream a CSV file
      * @example
-     * node -e "c=require('CSV-JS');require('fs').createReadStream('csv.txt').pipe(c.stream()).pipe(c.json()).pipe(process.stdout)"
+     * node -e "c=require('CSV-JS');require('fs').createReadStream('csv.txt').pipe(c.stream()).pipe(c.stream.json()).pipe(process.stdout)"
      */
     CSV.stream = function () {
-	var s = new require('stream').Transform({objectMode: true})
-	s.EOL = '\n'
-	s.prior = ""
-	s.emitter = function(s) {
-	    return function(e) {
-		s.push(CSV.parse(e+s.EOL))
-	    }
-	}(s);
+        var s = new require('stream').Transform({objectMode: true});
+        s.EOL = '\n';
+        s.prior = "";
+        s.emitter = function(s) {
+            return function(e) {
+                s.push(CSV.parse(e+s.EOL))
+            }
+        }(s);
 
-	s._transform = function(chunk, encoding, done) {
-	    var lines = (this.prior == "") ?
-		chunk.toString().split(this.EOL) :
-		(this.prior + chunk.toString()).split(this.EOL)
-	    this.prior = lines.pop();
-	    lines.forEach(this.emitter)
-	    done()
-	}
+        s._transform = function(chunk, encoding, done) {
+            var lines = (this.prior == "") ?
+                chunk.toString().split(this.EOL) :
+                (this.prior + chunk.toString()).split(this.EOL);
+            this.prior = lines.pop();
+            lines.forEach(this.emitter);
+            done()
+        };
 
-	s._flush = function(done) {
-	    if (this.prior != "") {
-		this.emitter(this.prior)
-		this.prior = ""
-	    }
-	    done()
-	}
-	return s
-    }
+        s._flush = function(done) {
+            if (this.prior != "") {
+                this.emitter(this.prior)
+                this.prior = ""
+            }
+            done()
+        };
+        return s
+    };
+
+    CSV.stream.json = function () {
+        var s = new require('stream').Transform({objectMode: true});
+        s._transform = function(chunk, encoding, done) {
+            s.push(JSON.stringify(chunk.toString())+require('os').EOL);
+            done()
+        };
+        return s
+    };
     
     CSV.reset = function () {
         CSV.state = null;
@@ -341,14 +341,33 @@
 
     };
 
-    (function(name, context, definition) {
-        var define;
-            if (typeof module != 'undefined' && module.exports) module.exports = definition();
-            else if (typeof define == 'function' && typeof define.amd == 'object') define(definition);
-            else context[name] = definition();
-        }('CSV', Function('return this')(), function()
-            { return CSV; }
-        )
-    );
 
-})();
+    // Node, PhantomJS, etc
+    // eg.  var CSV = require("CSV"); CSV.parse(...);
+    if ( typeof module != 'undefined' && module.exports) {
+        module.exports = CSV;
+        return;
+    }
+
+    // CommonJS http://wiki.commonjs.org/wiki/Modules
+    // eg.  var CSV = require("CSV"); CSV.parse(...);
+    else if (typeof exports != 'undefined' ) {
+        exports.CSV = CSV;
+    }
+
+    // AMD https://github.com/amdjs/amdjs-api/wiki/AMD
+    // eg.  require(['./csv.js'], function (CSV) { CSV.parse(...); } );
+    else if (typeof define == 'function' && typeof define.amd == 'object'){
+        define([], function () {
+            return CSV;
+        });
+        return;
+    }
+
+    // .. else global var
+    // eg. CSV.parse(...);
+    if( global ){
+        global.CSV = CSV;
+    }
+
+})(this);

@@ -1,11 +1,13 @@
 package com.uchenikimira.servestr.vertx;
 
 import io.vertx.core.AbstractVerticle;
+import io.vertx.core.http.HttpMethod;
 import io.vertx.core.json.JsonObject;
 import io.vertx.core.logging.Logger;
-import io.vertx.core.logging.impl.LoggerFactory;
+import io.vertx.core.logging.LoggerFactory;
 import io.vertx.ext.web.Router;
 import io.vertx.ext.web.handler.*;
+import io.vertx.ext.web.handler.sockjs.BridgeEvent;
 import io.vertx.ext.web.handler.sockjs.BridgeOptions;
 import io.vertx.ext.web.handler.sockjs.PermittedOptions;
 import io.vertx.ext.web.handler.sockjs.SockJSHandler;
@@ -13,6 +15,9 @@ import io.vertx.ext.web.sstore.LocalSessionStore;
 import io.vertx.ext.auth.AuthProvider;
 import io.vertx.ext.auth.shiro.ShiroAuth;
 import io.vertx.ext.auth.shiro.ShiroAuthRealmType;
+
+import java.util.HashSet;
+import java.util.Set;
 
 /**
  * Created by ignikot on 01.02.2015.
@@ -34,14 +39,24 @@ public class HttpServerVerticle extends AbstractVerticle {
 
         AuthProvider authProvider = ShiroAuth.create(vertx, ShiroAuthRealmType.PROPERTIES, config);
         Router router = Router.router(vertx);
-
+        CorsHandler corsh = CorsHandler.create("*");
+        corsh.allowedMethod(HttpMethod.CONNECT);
+        corsh.allowedMethod(HttpMethod.DELETE);
+        corsh.allowedMethod(HttpMethod.GET);
+        corsh.allowedMethod(HttpMethod.HEAD);
+        corsh.allowedMethod(HttpMethod.OPTIONS);
+        corsh.allowedMethod(HttpMethod.PATCH);
+        corsh.allowedMethod(HttpMethod.POST);
+        corsh.allowedMethod(HttpMethod.PUT);
+        corsh.allowedMethod(HttpMethod.TRACE);
+        router.route().handler(corsh);
         router.route().handler(CookieHandler.create());
         router.route().handler(SessionHandler.create(LocalSessionStore.create(vertx)));
 
         AuthHandler basicAuthHandler = BasicAuthHandler.create(authProvider);
 
         // All requests to paths starting with '/private/' will be protected
-        router.route("/*").handler(basicAuthHandler);
+        router.route("/components/*").handler(basicAuthHandler);
 
         PermittedOptions outboundPermitted = new PermittedOptions().setAddress("servestr.news");
 
@@ -49,26 +64,26 @@ public class HttpServerVerticle extends AbstractVerticle {
         JsonObject matchFind = new JsonObject();
         matchFind.put("action", "find");
         inboundPermittedFind.setMatch(matchFind);
-        inboundPermittedFind.setRequiredAuthority("read");
+        //inboundPermittedFind.setRequiredAuthority("read");
 
         PermittedOptions inboundPermittedInsert = new PermittedOptions().setAddress("servestr.changemanager");
         JsonObject matchInsert = new JsonObject();
         matchInsert.put("action", "insert");
         inboundPermittedInsert.setMatch(matchInsert);
-        inboundPermittedInsert.setRequiredAuthority("write");
+        //inboundPermittedInsert.setRequiredAuthority("write");
 
 
         PermittedOptions inboundPermittedSave = new PermittedOptions().setAddress("servestr.changemanager");
         JsonObject matchSave = new JsonObject();
         matchSave.put("action", "save");
         inboundPermittedSave.setMatch(matchSave);
-        inboundPermittedSave.setRequiredAuthority("write");
+        //inboundPermittedSave.setRequiredAuthority("write");
 
         PermittedOptions inboundPermittedDelete = new PermittedOptions().setAddress("servestr.changemanager");
         JsonObject matchDelete = new JsonObject();
         matchDelete.put("action", "delete");
         inboundPermittedDelete.setMatch(matchDelete);
-        inboundPermittedDelete.setRequiredAuthority("write");
+        //inboundPermittedDelete.setRequiredAuthority("write");
 
         BridgeOptions options = new BridgeOptions()
                 .addOutboundPermitted(outboundPermitted)
