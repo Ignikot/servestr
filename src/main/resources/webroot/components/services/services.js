@@ -24,7 +24,7 @@ angular.module('servestrApp.services', [
     "timeout": 60000
     })
     .config(['$routeProvider', function ($routeProvider) {
-        $routeProvider.when('/services', {
+        $routeProvider.when('/services/', {
             templateUrl: 'components/services/services-list.html',
             controller: 'servicesListCtrl'
         });

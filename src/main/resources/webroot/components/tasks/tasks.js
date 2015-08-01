@@ -21,7 +21,7 @@ angular.module('servestrApp.tasks', [
         .useUrlServer("https://" + location.hostname);//TODO openshift hack
     })
     .config(['$routeProvider', function ($routeProvider) {
-        $routeProvider.when('/tasks', {
+        $routeProvider.when('/tasks/', {
             templateUrl: 'components/tasks/tasks-list.html',
             controller: 'tasksListCtrl'
         });
@@ -29,15 +29,15 @@ angular.module('servestrApp.tasks', [
 
     .controller('tasksListCtrl', ['$scope', '$filter', '$http', 'vertxEventBusService', 'uiGridConstants', 'servestrConfig', 'toaster', function ($scope, $filter, $http, vertxEventBusService, uiGridConstants, servestrConfig, toaster) {
         $scope.collection = 'task';
-        $scope.servicesGridOptions = {};
-        $scope.servicesGridOptions.enableColumnResizing = true;
-        $scope.servicesGridOptions.enableFiltering = true;
-        $scope.servicesGridOptions.enableGridMenu = true;
-        $scope.servicesGridOptions.showGridFooter = true;
-        $scope.servicesGridOptions.showColumnFooter = true;
-        $scope.servicesGridOptions.multiSelect = true;
-        $scope.servicesGridOptions.exporterMenuPdf = false;
-        $scope.servicesGridOptions.importerDataAddCallback = function ( grid, newObjects ) {
+        $scope.itemsGridOptions = {};
+        $scope.itemsGridOptions.enableColumnResizing = true;
+        $scope.itemsGridOptions.enableFiltering = true;
+        $scope.itemsGridOptions.enableGridMenu = true;
+        $scope.itemsGridOptions.showGridFooter = true;
+        $scope.itemsGridOptions.showColumnFooter = true;
+        $scope.itemsGridOptions.multiSelect = true;
+        $scope.itemsGridOptions.exporterMenuPdf = false;
+        $scope.itemsGridOptions.importerDataAddCallback = function ( grid, newObjects ) {
             for(var index = 0; index < newObjects.length; ++index) {
             var document = newObjects[index];
             delete document._id;
@@ -54,17 +54,17 @@ angular.module('servestrApp.tasks', [
                     toaster.pop(
                     {
                         type: 'error',
-                        title: 'Import service error',
+                        title: 'Import error',
                         body: reason.message,
                         showCloseButton: true
                     });
-                    console.warn('Error import service: ' + reason.message);
+                    console.warn('Error import: ' + reason.message);
                 });
             $scope.refreshList;
             };
         };
 
-        $scope.addService = function () {
+        $scope.addItem = function () {
             var message = {
                 "action": "insert",
                 "collection": $scope.collection,
@@ -75,19 +75,19 @@ angular.module('servestrApp.tasks', [
                 .then(function (reply) {
                     console.log('get reply: ', angular.toJson(reply, true));
                     $scope.reply = reply;
-                    $scope.newService = undefined;
-                    angular.forEach($scope.servicesGridOptions.data, function (document, key) {
+                    $scope.newItem = undefined;
+                    angular.forEach($scope.itemsGridOptions.data, function (document, key) {
                         if (document._id === this.reply._id) {
-                            this.newService = document;
+                            this.newItem = document;
                         }
                         ;
                     }, $scope);
-                    if (!$scope.newService) {
-                        $scope.newService = {"_id": reply._id};
-                        $scope.servicesGridOptions.data.push($scope.newService);
+                    if (!$scope.newItem) {
+                        $scope.newItem = {"_id": reply._id};
+                        $scope.itemsGridOptions.data.push($scope.newItem);
                     }
                     ;
-                    $scope.gridApi.cellNav.scrollToFocus($scope.newService, $scope.servicesGridOptions.columnDefs[2]);
+                    $scope.gridApi.cellNav.scrollToFocus($scope.newItem, $scope.itemsGridOptions.columnDefs[2]);
                 })
                 .catch(function (reason) {
                     toaster.pop(
@@ -101,7 +101,7 @@ angular.module('servestrApp.tasks', [
                 });
         };
 
-        $scope.deleteService = function() {
+        $scope.deleteItem = function() {
             var _idValues = [];
             var selection = $scope.gridApi.selection.getSelectedRows();
             for (var i = 0; i < selection.length; i++) {
@@ -135,7 +135,7 @@ angular.module('servestrApp.tasks', [
 
         $scope.loadColumns = function() {
 
-            $scope.servicesGridOptions.columnDefs = [
+            $scope.itemsGridOptions.columnDefs = [
                 {
                     name: '_id',
                     enableCellEdit: false,
@@ -172,6 +172,7 @@ angular.module('servestrApp.tasks', [
                 {name: 'summary', displayName: 'Summary', cellTooltip: true,
                 width: 500},
                 {name: 'creator', displayName: 'Creator',
+                width: 200},
                 {
                     name: 'created​',
                     displayName: 'Created​',
@@ -183,7 +184,7 @@ angular.module('servestrApp.tasks', [
             ];
 
             $scope.dateColumns = [];
-            angular.forEach($scope.servicesGridOptions.columnDefs, function (column, key) {
+            angular.forEach($scope.itemsGridOptions.columnDefs, function (column, key) {
                 if(column.type === "date") {
                     this.push(column.name);
                     };
@@ -208,7 +209,7 @@ angular.module('servestrApp.tasks', [
                 return result;
             };
 
-            angular.forEach($scope.servicesGridOptions.columnDefs, function (column, key) {
+            angular.forEach($scope.itemsGridOptions.columnDefs, function (column, key) {
                 column.filter = {
                     condition: newFilter,
                     flags: { caseSensitive: false }
@@ -232,13 +233,13 @@ angular.module('servestrApp.tasks', [
                 };
             }, $scope);
 
-            $scope.servicesGridOptions.data = reply;
+            $scope.itemsGridOptions.data = reply;
 
                     toaster.pop(
                     {
                         type: 'success',
                         title: 'Refresh success',
-                        body: 'Success on refreshing service list',
+                        body: 'Success on refreshing list',
                         timeout:5000,
                         showCloseButton: true
                     });
@@ -258,9 +259,9 @@ angular.module('servestrApp.tasks', [
                         message.document[name] = new Date(stringValue);
                     };
                 };
-                angular.forEach($scope.servicesGridOptions.data, function (document, key) {
+                angular.forEach($scope.itemsGridOptions.data, function (document, key) {
                     if (document._id === this.message.document._id) {
-                        this.servicesGridOptions.data[key] = this.message.document;
+                        this.itemsGridOptions.data[key] = this.message.document;
                         this.$apply();
                     }
                     ;
@@ -268,15 +269,15 @@ angular.module('servestrApp.tasks', [
             }
             ;
             if (action === 'insert') {
-                $scope.newPossibleService = undefined;
-                angular.forEach($scope.servicesGridOptions.data, function (document, key) {
+                $scope.newPossibleItem = undefined;
+                angular.forEach($scope.itemsGridOptions.data, function (document, key) {
                     if (document._id === this.message._id) {
-                        this.newPossibleService = document;
+                        this.newPossibleItem = document;
                     }
                     ;
                 }, $scope);
-                if (!$scope.newPossibleService) {
-                    $scope.servicesGridOptions.data.push({"_id": message._id});
+                if (!$scope.newPossibleItem) {
+                    $scope.itemsGridOptions.data.push({"_id": message._id});
                 }
                 ;
             }
@@ -284,7 +285,7 @@ angular.module('servestrApp.tasks', [
             if (action === 'delete') {
                 var idList = message.query._id.$in;
                 console.warn('query :' + angular.toJson(idList, true));
-                $scope.servicesGridOptions.data = $filter('filter')($scope.servicesGridOptions.data, function(item) {
+                $scope.itemsGridOptions.data = $filter('filter')($scope.itemsGridOptions.data, function(item) {
                     console.warn('if delete :' + item._id);
                     console.warn('indexOf :' + idList.indexOf(item._id));
                     return -1 === idList.indexOf(item._id)}
@@ -293,7 +294,7 @@ angular.module('servestrApp.tasks', [
             ;
         };
 
-        var afterServiceEdit = function (rowEntity, colDef, newValue, oldValue) {
+        var afterItemEdit = function (rowEntity, colDef, newValue, oldValue) {
             if (newValue == oldValue) return;
             var message = {
                 "action": "save",
@@ -339,9 +340,9 @@ angular.module('servestrApp.tasks', [
                 });
         };
 
-        $scope.servicesGridOptions.onRegisterApi = function (gridApi) {
+        $scope.itemsGridOptions.onRegisterApi = function (gridApi) {
             $scope.gridApi = gridApi;
-            gridApi.edit.on.afterCellEdit($scope, afterServiceEdit);
+            gridApi.edit.on.afterCellEdit($scope, afterItemEdit);
             $scope.loadColumns();
         };
 
