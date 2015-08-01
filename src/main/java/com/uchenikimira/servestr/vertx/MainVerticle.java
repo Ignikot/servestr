@@ -17,21 +17,5 @@ public class MainVerticle extends AbstractVerticle {
         vertx.deployVerticle("com.uchenikimira.servestr.vertx.HttpServerVerticle", options);
         logger.info("HttpServerVerticle started");
         logger.info("MainVerticle started");
-        /*
-        DeploymentOptions authOptions = new DeploymentOptions().setConfig(config().getJsonObject("auth"));
-        vertx.deployVerticle("service:io.vertx.shiro-auth-service", authOptions, authRes -> {
-            if(authRes.succeeded()) {
-                logger.info("AuthProviderImpl started");
-                DeploymentOptions options = new DeploymentOptions().setConfig(config());
-                vertx.deployVerticle("com.uchenikimira.servestr.vertx.ChangeManagerVerticle", options);
-                logger.info("ChangeManagerVerticle started");
-                vertx.deployVerticle("com.uchenikimira.servestr.vertx.HttpServerVerticle", options);
-                logger.info("HttpServerVerticle started");
-                logger.info("MainVerticle started");
-            } else {
-                authRes.cause().printStackTrace();
-            };
-        });
-        */
     }
 }
