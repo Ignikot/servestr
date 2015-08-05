@@ -4,5 +4,6 @@
     <file url="file://$PROJECT_DIR$/src/main/resources/webroot/components/home/home.html" charset="UTF-8" />
     <file url="file://$PROJECT_DIR$/src/main/resources/webroot/components/services/services-list.html" charset="UTF-8" />
     <file url="file://$PROJECT_DIR$/src/main/resources/webroot/components/tasks/tasks-list.html" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/src/main/resources/webroot/components/view/view.html" charset="UTF-8" />
   </component>
 </project>

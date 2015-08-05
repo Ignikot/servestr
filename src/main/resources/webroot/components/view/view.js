@@ -1,6 +1,6 @@
 'use strict';
 
-angular.module('servestrApp.services', [
+angular.module('servestrApp.view', [
     'ngRoute',
     'ui.grid',
     'ui.grid.cellNav',
@@ -20,27 +20,24 @@ angular.module('servestrApp.services', [
         .useReconnect()
         .useUrlServer("https://" + location.hostname);//TODO openshift hack
     })
-    .constant("servestrConfig", {
-    "timeout": 60000
-    })
     .config(['$routeProvider', function ($routeProvider) {
-        $routeProvider.when('/services/', {
-            templateUrl: 'components/services/services-list.html',
-            controller: 'servicesListCtrl'
+        $routeProvider.when('/view/', {
+            templateUrl: 'components/view/view.html',
+            controller: 'viewCtrl'
         });
     }])
 
-    .controller('servicesListCtrl', ['$scope', '$filter', '$http', 'vertxEventBusService', 'uiGridConstants', 'servestrConfig', 'toaster', function ($scope, $filter, $http, vertxEventBusService, uiGridConstants, servestrConfig, toaster) {
-        $scope.collection = 'service';
-        $scope.servicesGridOptions = {};
-        $scope.servicesGridOptions.enableColumnResizing = true;
-        $scope.servicesGridOptions.enableFiltering = true;
-        $scope.servicesGridOptions.enableGridMenu = true;
-        $scope.servicesGridOptions.showGridFooter = true;
-        $scope.servicesGridOptions.showColumnFooter = true;
-        $scope.servicesGridOptions.multiSelect = true;
-        $scope.servicesGridOptions.exporterMenuPdf = false;
-        $scope.servicesGridOptions.importerDataAddCallback = function ( grid, newObjects ) {
+    .controller('viewCtrl', ['$scope', '$filter', '$http', 'vertxEventBusService', 'uiGridConstants', 'servestrConfig', 'toaster', function ($scope, $filter, $http, vertxEventBusService, uiGridConstants, servestrConfig, toaster) {
+        $scope.collection = 'services';
+        $scope.itemsGridOptions = {};
+        $scope.itemsGridOptions.enableColumnResizing = true;
+        $scope.itemsGridOptions.enableFiltering = true;
+        $scope.itemsGridOptions.enableGridMenu = true;
+        $scope.itemsGridOptions.showGridFooter = true;
+        $scope.itemsGridOptions.showColumnFooter = true;
+        $scope.itemsGridOptions.multiSelect = true;
+        $scope.itemsGridOptions.exporterMenuPdf = false;
+        $scope.itemsGridOptions.importerDataAddCallback = function ( grid, newObjects ) {
             for(var index = 0; index < newObjects.length; ++index) {
             var document = newObjects[index];
             delete document._id;
@@ -57,17 +54,17 @@ angular.module('servestrApp.services', [
                     toaster.pop(
                     {
                         type: 'error',
-                        title: 'Import service error',
+                        title: 'Import error',
                         body: reason.message,
                         showCloseButton: true
                     });
-                    console.warn('Error import service: ' + reason.message);
+                    console.warn('Error import: ' + reason.message);
                 });
             $scope.refreshList;
             };
         };
 
-        $scope.addService = function () {
+        $scope.addItem = function () {
             var message = {
                 "action": "insert",
                 "collection": $scope.collection,
@@ -78,19 +75,19 @@ angular.module('servestrApp.services', [
                 .then(function (reply) {
                     console.log('get reply: ', angular.toJson(reply, true));
                     $scope.reply = reply;
-                    $scope.newService = undefined;
-                    angular.forEach($scope.servicesGridOptions.data, function (document, key) {
+                    $scope.newItem = undefined;
+                    angular.forEach($scope.itemsGridOptions.data, function (document, key) {
                         if (document._id === this.reply._id) {
-                            this.newService = document;
+                            this.newItem = document;
                         }
                         ;
                     }, $scope);
-                    if (!$scope.newService) {
-                        $scope.newService = {"_id": reply._id};
-                        $scope.servicesGridOptions.data.push($scope.newService);
+                    if (!$scope.newItem) {
+                        $scope.newItem = {"_id": reply._id};
+                        $scope.itemsGridOptions.data.push($scope.newItem);
                     }
                     ;
-                    $scope.gridApi.cellNav.scrollToFocus($scope.newService, $scope.servicesGridOptions.columnDefs[2]);
+                    $scope.gridApi.cellNav.scrollToFocus($scope.newItem, $scope.itemsGridOptions.columnDefs[2]);
                 })
                 .catch(function (reason) {
                     toaster.pop(
@@ -104,7 +101,7 @@ angular.module('servestrApp.services', [
                 });
         };
 
-        $scope.deleteService = function() {
+        $scope.deleteItem = function() {
             var _idValues = [];
             var selection = $scope.gridApi.selection.getSelectedRows();
             for (var i = 0; i < selection.length; i++) {
@@ -138,7 +135,7 @@ angular.module('servestrApp.services', [
 
         $scope.loadColumns = function() {
 
-            $scope.servicesGridOptions.columnDefs = [
+            $scope.itemsGridOptions.columnDefs = [
                 {
                     name: '_id',
                     enableCellEdit: false,
@@ -149,112 +146,47 @@ angular.module('servestrApp.services', [
                 {name: 'code', displayName: 'Код', width: 100},
                 {
                     name: 'stype',
-                    displayName: 'Тип',/*
-                    editableCellTemplate: 'ui-grid/dropdownEditor',
-                    editDropdownOptionsArray: [
-                        {id: 1, stype: 'Сервис'},
-                        {id: 2, stype: 'Доработка'}
-                    ],*/
+                    displayName: 'Тип',
                     width: 100
                 },
-                {name: 'cr', displayName: 'CR',
-                 width: 100},
-                {name: 'cr2', displayName: 'CR2',
+                {name: 'manager', displayName: 'Ответственный',
+                width: 200},
+                {name: 'state', displayName: 'Состояние',
+                width: 100},
+                {name: 'substate', displayName: 'Подстатус дефекта\CR',
                 width: 100},
                 {name: 'sync', displayName: 'Синхронизация',
                 width: 200},
                 {name: 'description', displayName: 'Описание', cellTooltip: true,
                 width: 500},
-                {name: 'info', displayName: 'Дополнительная информация', cellTooltip: true,
+                {name: 'executor', displayName: 'Исполнитель',
+                width: 200},
+                {name: 'jira', displayName: 'JIRA DEF',
+                width: 100},
+                {name: 'environment', displayName: 'Environment',
+                width: 200},
+                {name: 'multi', displayName: 'Multi',
+                width: 100},
+                {name: 'severity', displayName: 'Severity',
+                width: 100},
+                {name: 'status', displayName: 'Status',
+                width: 100},
+                {name: 'summary', displayName: 'Summary', cellTooltip: true,
                 width: 500},
-                {name: 'priority', displayName: 'Приоритет',
-                width: 100},
-                {name: 'sprint', displayName: 'Спринт', type: 'number', width: 100},
-                {name: 'fix', displayName: 'Номер фикса',
-                width: 100},
-                {name: 'developer_queue', displayName: 'Очередь разработчика',
-                width: 100},
-                {name: 'tester_queue', displayName: 'Очередь тестировщика',
-                width: 100},
-                {
-                    name: 'plan_end_date',
-                    displayName: 'Плановая дата окончания работ',
-                    type: 'date',
-                    cellFilter: 'date:"yyyy-MM-dd"',
-                    width: 100
-                },
-                {name: 'release', displayName: 'Вошло в сборку',
-                width: 100},
-                {name: 'jira_done', displayName: 'Jira done',
-                width: 100},
-                /*{name: 'req', displayName: 'Требование',
-                width: 100},*/
-                {name: 'jira', displayName: 'JIRA',
-                width: 100},
-                {name: 'consumer', displayName: 'Потребитель',
-                width: 100},
-                {name: 'provider', displayName: 'Поставщик',
-                width: 100},
-                /*{name: 'architect_state', displayName: 'Статус архитектуры',
-                width: 100},*/
-                {name: 'passport_state', displayName: 'Статус паспорта',
-                width: 100},
-                {name: 'estimate_analize', displayName: 'Оценка на анализ',
-                width: 100},
-                {name: 'estimate_dev', displayName: 'Оценка на разработку',
-                width: 100},
-                {name: 'estimate_test', displayName: 'Оценка на тестирование',
-                width: 100},
-                {name: 'analist', displayName: 'Аналитик',
+                {name: 'creator', displayName: 'Creator',
                 width: 200},
                 {
-                    name: 'passport_date',
-                    displayName: 'Дата паспорта',
+                    name: 'created​',
+                    displayName: 'Created​',
                     type: 'date',
                     cellFilter: 'date:"yyyy-MM-dd"',
                     width: 100
                 },
-                /*{name: 'mapping_state', displayName: 'Статус мэпинга',
-                width: 100},*/
-                {name: 'developer_state', displayName: 'Статус разработки',
-                width: 100},
-                {
-                    name: 'developer_date',
-                    displayName: 'Дата разработки',
-                    type: 'date',
-                    cellFilter: 'date:"yyyy-MM-dd"',
-                    width: 100
-                },
-                {name: 'developer', displayName: 'Разработчик',
-                width: 200},
-                {name: 'developer_jira', displayName: 'Задача разработчика в JIRA',
-                width: 200},
-                /*{name: 'method', displayName: 'Метод тестирования',
-                width: 100},*/
-                {name: 'test_state', displayName: 'Статус тестирования',
-                width: 100},
-                {
-                    name: 'test_date',
-                    displayName: 'Дата тестирования',
-                    type: 'date',
-                    cellFilter: 'date:"yyyy-MM-dd"',
-                    width: 100
-                },
-                {name: 'test_info', displayName: 'Примечания по тестированию', cellTooltip: true,
-                width: 500},
-                {name: 'test_script_state', displayName: 'Статус разработки скрипта', width: 100},
-                {name: 'test_script_author', displayName: 'Автор скрипта', width: 100},
-                {name: 'tester', displayName: 'Тестировщик', width: 200},
-                {name: 'test_group', displayName: 'Группа тестов', width: 200},
-                {name: 'tester_coverage', displayName: 'Тестовое покрытие', width: 100},
-                {name: 'bs_status', displayName: 'Статус бизнес сервиса', cellTooltip: true, width: 500},
-                {name: 'wsdl', displayName: 'WSDL url', cellTooltip: true, width: 500},
-                {name: 'service', displayName: 'Cервис', cellTooltip: true, width: 500},
                 {name: 'pad', displayName: ' ', enableCellEdit: false, enableFiltering: false, enableSorting: false, enableColumnResizing:false, enableGridMenu: false, width: 100}
             ];
 
             $scope.dateColumns = [];
-            angular.forEach($scope.servicesGridOptions.columnDefs, function (column, key) {
+            angular.forEach($scope.itemsGridOptions.columnDefs, function (column, key) {
                 if(column.type === "date") {
                     this.push(column.name);
                     };
@@ -279,7 +211,7 @@ angular.module('servestrApp.services', [
                 return result;
             };
 
-            angular.forEach($scope.servicesGridOptions.columnDefs, function (column, key) {
+            angular.forEach($scope.itemsGridOptions.columnDefs, function (column, key) {
                 column.filter = {
                     condition: newFilter,
                     flags: { caseSensitive: false }
@@ -303,13 +235,13 @@ angular.module('servestrApp.services', [
                 };
             }, $scope);
 
-            $scope.servicesGridOptions.data = reply;
+            $scope.itemsGridOptions.data = reply;
 
                     toaster.pop(
                     {
                         type: 'success',
                         title: 'Refresh success',
-                        body: 'Success on refreshing service list',
+                        body: 'Success on refreshing list',
                         timeout:5000,
                         showCloseButton: true
                     });
@@ -329,9 +261,9 @@ angular.module('servestrApp.services', [
                         message.document[name] = new Date(stringValue);
                     };
                 };
-                angular.forEach($scope.servicesGridOptions.data, function (document, key) {
+                angular.forEach($scope.itemsGridOptions.data, function (document, key) {
                     if (document._id === this.message.document._id) {
-                        this.servicesGridOptions.data[key] = this.message.document;
+                        this.itemsGridOptions.data[key] = this.message.document;
                         this.$apply();
                     }
                     ;
@@ -339,15 +271,15 @@ angular.module('servestrApp.services', [
             }
             ;
             if (action === 'insert') {
-                $scope.newPossibleService = undefined;
-                angular.forEach($scope.servicesGridOptions.data, function (document, key) {
+                $scope.newPossibleItem = undefined;
+                angular.forEach($scope.itemsGridOptions.data, function (document, key) {
                     if (document._id === this.message._id) {
-                        this.newPossibleService = document;
+                        this.newPossibleItem = document;
                     }
                     ;
                 }, $scope);
-                if (!$scope.newPossibleService) {
-                    $scope.servicesGridOptions.data.push({"_id": message._id});
+                if (!$scope.newPossibleItem) {
+                    $scope.itemsGridOptions.data.push({"_id": message._id});
                 }
                 ;
             }
@@ -355,7 +287,7 @@ angular.module('servestrApp.services', [
             if (action === 'delete') {
                 var idList = message.query._id.$in;
                 console.warn('query :' + angular.toJson(idList, true));
-                $scope.servicesGridOptions.data = $filter('filter')($scope.servicesGridOptions.data, function(item) {
+                $scope.itemsGridOptions.data = $filter('filter')($scope.itemsGridOptions.data, function(item) {
                     console.warn('if delete :' + item._id);
                     console.warn('indexOf :' + idList.indexOf(item._id));
                     return -1 === idList.indexOf(item._id)}
@@ -364,7 +296,7 @@ angular.module('servestrApp.services', [
             ;
         };
 
-        var afterServiceEdit = function (rowEntity, colDef, newValue, oldValue) {
+        var afterItemEdit = function (rowEntity, colDef, newValue, oldValue) {
             if (newValue == oldValue) return;
             var message = {
                 "action": "save",
@@ -410,9 +342,9 @@ angular.module('servestrApp.services', [
                 });
         };
 
-        $scope.servicesGridOptions.onRegisterApi = function (gridApi) {
+        $scope.itemsGridOptions.onRegisterApi = function (gridApi) {
             $scope.gridApi = gridApi;
-            gridApi.edit.on.afterCellEdit($scope, afterServiceEdit);
+            gridApi.edit.on.afterCellEdit($scope, afterItemEdit);
             $scope.loadColumns();
         };
 

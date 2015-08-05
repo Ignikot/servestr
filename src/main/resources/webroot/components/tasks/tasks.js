@@ -155,6 +155,8 @@ angular.module('servestrApp.tasks', [
                 width: 100},
                 {name: 'substate', displayName: 'Подстатус дефекта\CR',
                 width: 100},
+                {name: 'sync', displayName: 'Синхронизация',
+                width: 200},
                 {name: 'description', displayName: 'Описание', cellTooltip: true,
                 width: 500},
                 {name: 'executor', displayName: 'Исполнитель',
