@@ -181,8 +181,7 @@ angular.module('servestrApp.view', [
                     type: 'date',
                     cellFilter: 'date:"yyyy-MM-dd"',
                     width: 100
-                },
-                {name: 'pad', displayName: ' ', enableCellEdit: false, enableFiltering: false, enableSorting: false, enableColumnResizing:false, enableGridMenu: false, width: 100}
+                }
             ];
 
             $scope.dateColumns = [];
@@ -212,11 +211,34 @@ angular.module('servestrApp.view', [
             };
 
             angular.forEach($scope.itemsGridOptions.columnDefs, function (column, key) {
-                column.filter = {
-                    condition: newFilter,
-                    flags: { caseSensitive: false }
-                };
+                switch(column.type) {
+                case 'date':
+                    column.filters = [
+                        {
+                            condition: uiGridConstants.filter.GREATER_THAN_OR_EQUAL,
+                            placeholder: 'с: YYYY-MM-DD',
+                            flags: {date: true}
+                        },
+                        {
+                            condition: uiGridConstants.filter.LESS_THAN_OR_EQUAL,
+                            placeholder: 'по: YYYY-MM-DD',
+                            flags: {date: true}
+                        }
+                    ];
+                    break;
+                default:
+                    column.filter = {
+                        condition: newFilter,
+                        flags: { caseSensitive: false }
+                    };
+                }
             }, null);
+
+            if($scope.itemsGridOptions.columnDefs.length < 30) {
+                $scope.itemsGridOptions.columnVirtualizationThreshold = $scope.itemsGridOptions.columnDefs.length;
+            } else {
+                $scope.itemsGridOptions.columnVirtualizationThreshold = 20;
+            }
 
         };
 

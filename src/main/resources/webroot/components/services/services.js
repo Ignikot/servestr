@@ -249,8 +249,7 @@ angular.module('servestrApp.services', [
                 {name: 'tester_coverage', displayName: 'Тестовое покрытие', width: 100},
                 {name: 'bs_status', displayName: 'Статус бизнес сервиса', cellTooltip: true, width: 500},
                 {name: 'wsdl', displayName: 'WSDL url', cellTooltip: true, width: 500},
-                {name: 'service', displayName: 'Cервис', cellTooltip: true, width: 500},
-                {name: 'pad', displayName: ' ', enableCellEdit: false, enableFiltering: false, enableSorting: false, enableColumnResizing:false, enableGridMenu: false, width: 100}
+                {name: 'service', displayName: 'Cервис', cellTooltip: true, width: 500}
             ];
 
             $scope.dateColumns = [];
@@ -280,11 +279,34 @@ angular.module('servestrApp.services', [
             };
 
             angular.forEach($scope.servicesGridOptions.columnDefs, function (column, key) {
-                column.filter = {
-                    condition: newFilter,
-                    flags: { caseSensitive: false }
-                };
+                switch(column.type) {
+                case 'date':
+                    column.filters = [
+                        {
+                            condition: uiGridConstants.filter.GREATER_THAN_OR_EQUAL,
+                            placeholder: 'с: YYYY-MM-DD',
+                            flags: {date: true}
+                        },
+                        {
+                            condition: uiGridConstants.filter.LESS_THAN_OR_EQUAL,
+                            placeholder: 'по: YYYY-MM-DD',
+                            flags: {date: true}
+                        }
+                    ];
+                    break;
+                default:
+                    column.filter = {
+                        condition: newFilter,
+                        flags: { caseSensitive: false }
+                    };
+                }
             }, null);
+
+            if($scope.servicesGridOptions.columnDefs.length < 30) {
+                $scope.servicesGridOptions.columnVirtualizationThreshold = $scope.servicesGridOptions.columnDefs.length;
+            } else {
+                $scope.servicesGridOptions.columnVirtualizationThreshold = 20;
+            }
 
         };
 
